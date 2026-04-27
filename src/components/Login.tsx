@@ -1,14 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { Settings, ShieldCheck, User, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { Settings, ShieldCheck, User, ArrowRight, Loader2, AlertCircle, Database, CheckCircle2, XCircle } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [dbStatus, setDbStatus] = useState<{ isConnected: boolean; status: string; isLoading: boolean }>({
+    isConnected: false,
+    status: 'checking',
+    isLoading: true
+  });
   const { login } = useAuth();
+
+  useEffect(() => {
+    const checkDb = async () => {
+      try {
+        const res = await fetch('/api/db-status');
+        const data = await res.json();
+        setDbStatus({ isConnected: data.isConnected, status: data.status, isLoading: false });
+      } catch (err) {
+        setDbStatus({ isConnected: false, status: 'error', isLoading: false });
+      }
+    };
+    checkDb();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +67,22 @@ export default function Login() {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="w-full max-w-md relative z-10"
       >
+        <div className="flex justify-center mb-4">
+          <div className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border ${
+            dbStatus.isLoading ? 'bg-slate-50 text-slate-400 border-slate-100' :
+            dbStatus.isConnected ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'
+          }`}>
+            {dbStatus.isLoading ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : dbStatus.isConnected ? (
+              <CheckCircle2 size={12} />
+            ) : (
+              <XCircle size={12} />
+            )}
+            <span>DB: {dbStatus.status}</span>
+          </div>
+        </div>
+
         <div className="text-center mb-10">
           <motion.div 
             initial={{ scale: 0 }}

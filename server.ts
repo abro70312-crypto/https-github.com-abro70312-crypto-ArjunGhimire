@@ -157,7 +157,7 @@ async function createNotification(recipient: string, title: string, message: str
 
 // Bootstrap admin
 async function bootstrapAdmin() {
-  const adminExists = await Employee.findOne({ role: "admin" });
+  const adminExists = await Employee.findOne({ email: "admin@ems.com" });
   if (!adminExists) {
     const hashedPassword = await bcrypt.hash("admin123", 10);
     const admin = new Employee({
@@ -201,6 +201,17 @@ const authenticate = (req: any, res: any, next: any) => {
     res.status(401).json({ error: "Invalid token" });
   }
 };
+
+// --- HEALTH & STATUS ---
+app.get("/api/db-status", async (req, res) => {
+  const state = mongoose.connection.readyState;
+  const statusMap = ["disconnected", "connected", "connecting", "disconnecting"];
+  res.json({ 
+    status: statusMap[state] || "unknown",
+    isConnected: state === 1,
+    uri: process.env.MONGODB_URL ? "Provided" : "Missing"
+  });
+});
 
 // --- AUTH ROUTES ---
 app.post("/api/auth/login", async (req, res) => {
